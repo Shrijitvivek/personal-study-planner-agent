@@ -19,17 +19,10 @@ def update_progress(topic,status):
             student_memory["weak_topics"].append(topic)
     student_memory["last_studied"] = topic # Update the last studied topic
 
-"""update_progress("Loops", "completed")
-update_progress("Functions", "weak")"""
-
-print(student_memory)
-
 
 #Returns the current state of the student memory.
 def get_student_state(): 
     return student_memory
-
-print(get_student_state())
 
 #Extracts the topic the student wants to study from the user input
 def extract_topic(user_input):
@@ -53,6 +46,7 @@ def extract_time_available(user_input):
     else:
         return 0  # Default to 0 if no time is specified
 
+# Extract what the student wants the agent to do.
 def extract_intent(user_input):
     user_input = user_input.lower()
     if "what should i study" in user_input:
@@ -90,7 +84,7 @@ def extract_progress(user_input):
 
     return progress
 
-#Parses the user input and updates the parsed_input dictionary.
+# Parse the student's input and update their memory.
 def parse_user_input(user_input):
     
 
@@ -109,7 +103,7 @@ def parse_user_input(user_input):
     if topics:
         parsed_input["topics"].extend(topics) # Extend the topics list 
 
-    # Extract the amount of study time availablea and store it in minutes.
+    # Extract the amount of study time available and store it in minutes.
     time_available = extract_time_available(user_input)
     if time_available:
         parsed_input["time_available"] = time_available
@@ -125,7 +119,12 @@ def parse_user_input(user_input):
         parsed_input["completed_topics"] = progress["completed_topics"]
         parsed_input["weak_topics"] = progress["weak_topics"]
 
+    # Store completed and weak topics in the student's memory.
+    for topic in progress["completed_topics"]:
+        update_progress(topic, "completed") # Update the student's progress for completed topics
+
+    for topic in progress["weak_topics"]:
+        update_progress(topic, "weak") # Update the student's progress for weak topics
+
     # Return all the information extracted from the student's message.
     return parsed_input
-
-print(parse_user_input("I am weak in functions but I already studied loops"))
