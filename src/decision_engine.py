@@ -10,28 +10,15 @@ This file is the "brain" of the agent. It looks at:
 for WHICH topic. It never builds study content itself -- that
 job belongs to tools.py.
 
-Flow:
-    parsed_input + student_memory
-            |
-            v
-    resolve topic (from input, or from memory if not mentioned)
-            |
-            v
-    check topic status (weak? completed? new?)
-            |
-            v
-    apply branching rules -> pick one tool
-            |
-            v
-    return the tool's result
+
 """
 
 from tools import create_study_plan, give_practice_questions, give_revision_task
 
 
-# ============================================================
+
 # CURRICULUM ORDER & TOPIC IMPORTANCE
-# ============================================================
+
 
 # The order topics are normally learned in. Used to figure out
 # "what's next" when the student hasn't named a topic.
@@ -47,10 +34,9 @@ TOPIC_IMPORTANCE = {
 }
 
 
-# ============================================================
+
 # PRIORITY SCORE  (Optional Extension)
 #   priority = Weakness + Topic Importance + Time Fit
-# ============================================================
 
 def calculate_priority_score(topic, student_memory, time_available):
     """
@@ -90,9 +76,9 @@ def rank_candidate_topics(candidate_topics, student_memory, time_available):
     return scored
 
 
-# ============================================================
+
 # "WHAT SHOULD I STUDY NEXT?" LOGIC
-# ============================================================
+
 
 def decide_next_topic(student_memory, time_available=30):
     """
@@ -119,9 +105,8 @@ def decide_next_topic(student_memory, time_available=30):
     return None  # everything completed
 
 
-# ============================================================
 # MAIN DECISION LOGIC
-# ============================================================
+
 
 def decide_action(parsed_input, student_memory):
     """
@@ -134,11 +119,49 @@ def decide_action(parsed_input, student_memory):
     intent = parsed_input.get("intent")
     topics = parsed_input.get("topics", [])
     time_available = parsed_input.get("time_available", 0)
+    weak_topics_mentioned = parsed_input.get("weak_topics", [])
+    completed_topics_mentioned = parsed_input.get("completed_topics", [])
 
-    # ------------------------------------------------------
+    
+    # STEP 0a - Reject inputs with no actionable signal at all.
+    
+    if (
+        not topics
+        and intent is None
+        and time_available <= 0
+        and not weak_topics_mentioned
+        and not completed_topics_mentioned
+    ):
+        return {
+            "tool": None,
+            "status": "clarification_needed",
+            "message": (
+                "I couldn't tell what you'd like help with. Could you "
+                "let me know a subject/topic, how much time you have, "
+                "or whether you'd like a study plan, practice questions, "
+                "or a revision task?"
+            )
+        }
+
+ 
+    # STEP 0b - Reject "action words with no real topic".
+   
+    TOPIC_REQUIRED_INTENTS = {"practice", "revision", "explain", "plan"}
+
+    if not topics and intent in TOPIC_REQUIRED_INTENTS:
+        return {
+            "tool": None,
+            "status": "clarification_needed",
+            "message": (
+                f"Sure, I can help with that — which topic would you like "
+                f"{intent} for? For example: Variables, Conditions, Loops, "
+                f"or Functions."
+            )
+        }
+
+    
     # STEP 1 - Resolve the topic.
-    # If the student didn't mention one, fall back to memory.
-    # ------------------------------------------------------
+   
     if not topics:
         next_topic = decide_next_topic(student_memory, time_available)
 
@@ -161,10 +184,10 @@ def decide_action(parsed_input, student_memory):
         or topic in parsed_input.get("weak_topics", [])
     )
 
-    # ------------------------------------------------------
+   
     # STEP 2 - Explicit intent wins first.
     # If the student directly asked for something, honor it.
-    # ------------------------------------------------------
+   
 
     if intent == "practice":
         return give_practice_questions(parsed_input, student_memory)
@@ -183,19 +206,18 @@ def decide_action(parsed_input, student_memory):
 
     if intent == "next":
         return _route_completed_or_weak(topic, is_completed, is_weak,
-                                         parsed_input, student_memory)
+                                         time_available, parsed_input, student_memory)
 
-    # ------------------------------------------------------
     # STEP 3 - No explicit intent given.
     # Infer the best action from the topic's status + time.
-    # ------------------------------------------------------
+   
 
     # Already completed -> revise instead of re-learning from scratch.
     if is_completed:
         return give_revision_task(parsed_input, student_memory)
 
     # Known weak topic -> needs a full plan (concept + heavy practice),
-    # unless there's truly no time, then keep it light.
+    
     if is_weak:
         if time_available <= 0:
             return give_revision_task(parsed_input, student_memory)
@@ -213,21 +235,29 @@ def decide_action(parsed_input, student_memory):
     return give_practice_questions(parsed_input, student_memory)
 
 
-def _route_completed_or_weak(topic, is_completed, is_weak, parsed_input, student_memory):
+def _route_completed_or_weak(topic, is_completed, is_weak, time_available,
+                              parsed_input, student_memory):
     """
     Sub-rule used when intent == "next" (i.e. memory picked the topic).
-    A completed, non-weak topic just needs revision. Anything else
-    (new or weak) gets a full study plan.
+
+    - Completed, non-weak topic -> revision task (light, no time needed).
+    - Weak or new topic, WITH time available -> full study plan.
+    - Weak or new topic, WITH NO time available -> create_study_plan
+      would fail (it requires time_available > 0), so fall back to
+      practice questions for weak topics, or a revision task otherwise.
     """
     if is_completed and not is_weak:
         return give_revision_task(parsed_input, student_memory)
 
+    if time_available <= 0:
+        if is_weak:
+            return give_practice_questions(parsed_input, student_memory)
+        return give_revision_task(parsed_input, student_memory)
+
     return create_study_plan(parsed_input, student_memory)
 
-
-# ============================================================
 # BASIC DECISION ENGINE TESTING
-# ============================================================
+
 
 if __name__ == "__main__":
 
@@ -280,6 +310,20 @@ if __name__ == "__main__":
             "description": "\"What should I study next?\" with everything done",
             "parsed_input": {
                 "topics": [], "time_available": 30,
+                "weak_topics": [], "intent": "next", "completed_topics": []
+            }
+        },
+        {
+            "description": "\"What is a computer?\" -> unrelated input, should ask for clarification",
+            "parsed_input": {
+                "topics": [], "time_available": 0,
+                "weak_topics": [], "intent": None, "completed_topics": []
+            }
+        },
+        {
+            "description": "\"What should I do next?\" with NO time given -> must not crash",
+            "parsed_input": {
+                "topics": [], "time_available": 0,
                 "weak_topics": [], "intent": "next", "completed_topics": []
             }
         },
