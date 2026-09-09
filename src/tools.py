@@ -66,7 +66,7 @@ def create_study_plan(parsed_input, student_memory):
     """
 
     topics = parsed_input.get("topics", [])
-    time_available = parsed_input.get("time_available", 0)
+    time_available = parsed_input.get("time_available",0)
     weak_topics = parsed_input.get("weak_topics", [])
 
     # Check whether a topic was identified
@@ -212,6 +212,9 @@ def give_revision_task(parsed_input, student_memory):
     else:
         topic = topics[0]
 
+    time_available = parsed_input.get("time_available", 0)
+    duration = time_available if time_available > 0 else 15
+
     revision_task = {
         "topic": topic,
 
@@ -229,7 +232,7 @@ def give_revision_task(parsed_input, student_memory):
             f"about {topic}."
         ),
 
-        "duration": 15
+        "duration": duration
     }
 
     return {
