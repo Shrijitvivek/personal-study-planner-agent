@@ -1,0 +1,117 @@
+PERSONAL STUDY PLANNER AGENT
+SAMPLE INPUT / OUTPUT
+
+============================================================
+SCENARIO 1: STUDY PLAN
+============================================================
+
+Student: I have 1 hour and want to study Python functions
+
+Agent:
+
+                    STUDY PLAN
+
+Topic           : Functions
+Available Time  : 60 minutes
+
+Plan:
+
+  Concept Review
+  Duration : 21 minutes
+  Task     : Review the important concepts of Functions.
+
+  Practice
+  Duration : 24 minutes
+  Task     : Solve practice questions on Functions.
+
+  Revision
+  Duration : 15 minutes
+  Task     : Quickly revise the concepts learned in Functions.
+
+
+============================================================
+SCENARIO 2: WEAK AND COMPLETED TOPICS
+============================================================
+
+Student: I am weak in functions but I already studied loops
+
+Agent:
+
+                    REVISION TASK
+
+Topic    : Loops
+Duration : 15 minutes
+
+Recall:
+  Explain the main concepts of Loops without looking at your notes.
+
+Practice:
+  Solve any 2 questions related to Loops.
+
+Self-Test:
+  Write down 3 important points you remember about Loops.
+
+
+============================================================
+SCENARIO 3: PRACTICE QUESTIONS
+============================================================
+
+Student: Give me practice questions on Functions
+
+Agent:
+
+                 PRACTICE QUESTIONS
+
+Topic: Functions
+
+Questions:
+
+  1. What is a function in Python?
+
+  2. What is the difference between a parameter and an argument?
+
+  3. Write a function to calculate the square of a number.
+
+
+============================================================
+SCENARIO 4: REVISION USING MEMORY
+============================================================
+
+Student: Give me a revision task
+
+Agent:
+
+Which topic would you like revision for?
+For example: Variables, Conditions, Loops, or Functions.
+
+Student: Functions
+
+Agent:
+
+                    REVISION TASK
+
+Topic    : Functions
+Duration : 15 minutes
+
+Recall:
+  Explain the main concepts of Functions without looking at your notes.
+
+Practice:
+  Solve any 2 questions related to Functions.
+
+Self-Test:
+  Write down 3 important points you remember about Functions.
+
+
+============================================================
+SCENARIO 5: FALLBACK
+============================================================
+
+Student: What is a computer?
+
+Agent:
+
+I couldn't tell what you'd like help with.
+Could you let me know a subject/topic, how much time you have,
+or whether you'd like a study plan, practice questions, or a
+revision task?
